@@ -389,7 +389,7 @@ function stats(){
     h+=hl(`${(t1mi/tot*100).toFixed(0)}%`,'of corridor miles are Tier 1 critical corridors',b1);
     const t2mod=sum(t2.filter(p=>!spotOf(p)&&bandOf(p)!=='Lower'),p=>p.length_mi), t2low=sum(t2.filter(p=>!spotOf(p)&&bandOf(p)==='Lower'),p=>p.length_mi);
     const b2=[`<b>${t2mi.toFixed(0)} of ${tot.toFixed(0)}</b> corridor miles`,
-              `<b>${t2mod.toFixed(0)} mi</b> have an overall risk score in the 50th–80th percentile <i>(next in line for Tier 1)</i>`,
+              `<b>${t2mod.toFixed(0)} mi</b> have an overall risk score in the 50th–80th percentile`,
               `<b>${t2low.toFixed(0)} mi</b> score below the statewide median`];
     if(spot>0) b2.push(`<b>${spot.toFixed(0)} mi</b> are top-20% runs under 2 mi <i>(spot treatments)</i>`);
     h+=hl(`${(t2mi/tot*100).toFixed(0)}%`,'of corridor miles are Tier 2 high-priority corridors',b2,'t2');
@@ -462,7 +462,7 @@ ${Object.entries(FAM).map(([k,f])=>`<tr><td>${f.label} (${f.w}%)</td>${LEGS.map(
 <h3>Service-level gap view</h3>
 <p>The TDI Framework specifies service levels rather than devices (§7.2). The gap view compares each segment's tier target (§3.4) with indicators of current observation and communications visible in public data: CCTV cameras, changeable message signs and weather stations ${sup('cwwp2')}, state middle-mile fiber ${sup('mmbi')}, managed lanes ${sup('ml')} and detector stations ${sup('pems')}. These indicators are not a full inventory of field assets or their condition, and point cameras do not provide continuous lane-level observation.</p>
 <h3>Reading the results</h3>
-<p>Each segment popup shows where the segment's overall risk score ranks among Caltrans state highway miles, and which risk family ranks highest. Tier 2 miles with an overall risk score in the 50th–80th percentile are the next in line for Tier 1.</p>
+<p>Each segment popup shows where the segment's overall risk score ranks among Caltrans state highway miles, and which risk family ranks highest.</p>
 <h3>Limitations</h3>
 <p>Reliability is ranked among the state highway miles that have detectors, which are mostly urban freeways. Device and lane-closure layers are a snapshot from ${DATA.accessed}. The crash density and traffic volume layers are display aids; segment scores use the matched counts and HPMS values. Venue locations come from OpenStreetMap and are not a complete list of event generators. Designated evacuation routes are not available statewide in public data; the Bay Area lifeline and critical routes are shown for context only.</p>`;
 const SRC_GROUPS = [
