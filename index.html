@@ -90,6 +90,10 @@ h1{font-size:20px;line-height:1.2;margin:0 0 4px;letter-spacing:-.01em}
 .sw{width:18px;height:7px;border-radius:2px;flex:none}
 .sw.pt{width:9px;height:9px;border-radius:50%;margin:0 4.5px}
 .lyr .name{flex:1;font-size:12.5px}
+.lsc{color:#9aa1a6;white-space:nowrap}
+.bkw{display:none;padding:0 0 2px 25px}.bkw.on{display:block}
+.bk{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted);white-space:nowrap}
+.bk i{display:inline-block;width:14px;border-radius:1px;opacity:.75}
 .none{font-size:11px;color:#9aa1a6;padding:1px 0 1px 2px;font-style:italic}
 .info{width:15px;height:15px;border-radius:50%;border:1px solid #b9c0c7;color:#7b8691;font:600 10px/13px Lato,sans-serif;text-align:center;cursor:pointer;flex:none;background:#fff;padding:0}
 .info:hover,.info.on{background:var(--charcoal);border-color:var(--charcoal);color:#fff}
@@ -357,11 +361,12 @@ const triLayer = L.geoJSON(DATA.tri,{style:triStyle,onEachFeature:(f,l)=>{
 const ptStyle = (c,r=4)=>({radius:r,color:'#fff',weight:1,fillColor:c,fillOpacity:.95,pane:'pts'});
 const HEAT_GRAD = {0.15:'rgba(231,179,204,0)',0.35:'#E7B3CC',0.6:'#CC699B',0.8:'#9B3A6E',1:'#5E1F45'};
 const LAYERS = {
- crash:{name:'Crash density, 2021–2025',sw:'linear-gradient(90deg,#F3D9E6,#CC699B,#5E1F45)',src:'ccrs',
+ crash:{name:'Crash density, 2021–2025',scored:true,sw:'linear-gradient(90deg,#F3D9E6,#CC699B,#5E1F45)',src:'ccrs',
   make:()=>L.heatLayer(DATA.crashes.features.map(f=>[f.geometry.coordinates[1],f.geometry.coordinates[0],1]),{radius:15,blur:15,maxZoom:9,max:9,minOpacity:0,gradient:HEAT_GRAD})},
- aadt:{name:'Traffic volume (band width)',sw:'linear-gradient(90deg,#c9c6c7,#8d8a8b)',src:'hpms',
-  make:()=>{const mx=Math.max(...DATA.tri.features.map(f=>f.properties.aadt||0));return L.geoJSON(DATA.tri,{style:f=>({color:'#6f6c6d',opacity:.35,weight:8+30*(f.properties.aadt||0)/mx,lineCap:'butt',pane:'halo'}),interactive:false});}},
- pems:{name:'Detector stations (PeMS)',color:'#3B3F3E',pt:true,src:'pems',
+ aadt:{name:'Traffic volume (line width)',scored:true,sw:'linear-gradient(90deg,#c9c6c7,#8d8a8b)',src:'hpms'},
+ detour:{name:'Detour length (line width)',scored:true,sw:'linear-gradient(90deg,#ddd2ec,#8E6CC0)',src:'hpms'},
+ access:{name:'Access density (line width)',scored:true,sw:'linear-gradient(90deg,#eadfcb,#B08D57)',src:'hpms'},
+ pems:{name:'Detector stations (PeMS)',scored:true,color:'#3B3F3E',pt:true,src:'pems',
   make:()=>L.geoJSON(DATA.pems,{pointToLayer:(f,ll)=>L.circleMarker(ll,ptStyle('#3B3F3E',2.8)),onEachFeature:(f,l)=>{const p=f.properties;l.bindTooltip(`<div class="tt"><b>PeMS station ${p.station}</b><br><span>${p.route} ${p.dir} · ${Math.round(p.delay35_vh).toLocaleString()} vehicle-hours of delay below 35 mph in 2025</span></div>`)}})},
  bott:{name:'Recurring bottlenecks',sw:'repeating-linear-gradient(90deg,#181D20 0 2px,#FFD314 2px 6px)',src:'bott',
   make:()=>{const g=L.layerGroup();
@@ -389,24 +394,41 @@ const LAYERS = {
  state:{name:'Other highways in Districts 3, 4, 10',sw:`linear-gradient(90deg,${C.t1h},${C.t2},${C.t3})`,src:'hpms',
   make:()=>L.geoJSON(DATA.state,{style:stateStyle,onEachFeature:(f,l)=>l.bindTooltip(`Tier ${f.properties.tier} · overall risk score ranks ${above(f.properties.composite_pct_illustrative)} of CA state highway miles`,{sticky:true})})},
 };
+// scored measures drawn as a band behind the corridor: width scales from the corridor's lowest to highest non-zero value; zero or missing draws nothing
+function bandSpec(col,color,fmt,unit){
+  const vals=DATA.tri.features.map(f=>f.properties[col]).filter(v=>v!=null&&v>0);
+  const lo=vals.length?Math.min(...vals):0, hi=vals.length?Math.max(...vals):1;
+  return {range:[lo,hi],color,fmt,unit,make:()=>L.geoJSON(DATA.tri,{style:f=>{const v=f.properties[col]||0;
+    return {color,opacity:.5,weight:v>0?14+24*(hi>lo?(v-lo)/(hi-lo):1):0,lineCap:'round',lineJoin:'round',pane:'halo'};},interactive:false})};
+}
+const VFMT={int:v=>Math.round(v).toLocaleString(),mi:v=>v.toFixed(1),dec:v=>v.toFixed(2)};
+Object.assign(LAYERS.aadt, bandSpec('aadt','#6f6c6d','int','vehicles per day'));
+Object.assign(LAYERS.detour, bandSpec('detour_extra_mi','#8E6CC0','mi','added miles if closed'));
+Object.assign(LAYERS.access, bandSpec('access_per_mi','#B08D57','dec','interchanges per mile'));
+const bandKey = d => `<div class="bk"><span>Width:</span><i style="background:${d.color};height:4px"></i>${VFMT[d.fmt](d.range[0])}<i style="background:${d.color};height:12px;margin-left:6px"></i>${VFMT[d.fmt](d.range[1])} <span>${d.unit}</span></div>`;
 // one toggle per risk family: each family is scored on one measure; its layers add context
 const GROUPS = [
  {key:'safety',label:'Safety',fam:'safety',layers:['crash']},
  {key:'exposure',label:'Exposure',fam:'exposure',layers:['aadt']},
  {key:'reliability',label:'Reliability',fam:'reliability',layers:['pems','bott']},
- {key:'criticality',label:'Criticality',fam:'criticality',layers:['mtc','ports','venues']},
- {key:'complexity',label:'Complexity',fam:'complexity',layers:['ml','lcs']},
+ {key:'criticality',label:'Criticality',fam:'criticality',layers:['detour','mtc','ports','venues']},
+ {key:'complexity',label:'Complexity',fam:'complexity',layers:['access','ml','lcs']},
  {key:'readiness',label:'Readiness',w:0,m:'Devices visible in public data',layers:['cctv','cms','rwis','fiber']},
  {key:'reference',label:'Reference',m:'Context, not scored',layers:['state'],ref:true},
 ];
 const made={}, userSet={};
-function setLayer(id,on){const d=LAYERS[id];if(on){made[id]=made[id]||d.make();made[id].addTo(map);}else if(made[id])map.removeLayer(made[id]);}
-function setGroup(key,on){const g=GROUPS.find(x=>x.key===key);g.layers.forEach(id=>setLayer(id,on));document.getElementById('cg_'+key).checked=on;if(key==='reference')legend();}
+function setLayer(id,on){const d=LAYERS[id];if(on){made[id]=made[id]||d.make();made[id].addTo(map);}else if(made[id])map.removeLayer(made[id]);
+  const k=document.getElementById('bk_'+id); if(k) k.classList.toggle('on',on);}
+const hasBand = g => g.layers.some(id=>LAYERS[id].range);
+function setGroup(key,on){const g=GROUPS.find(x=>x.key===key);
+  // bands share the space around the corridor line, so only one family with a band shows at a time
+  if(on&&hasBand(g)) GROUPS.filter(o=>o.key!==key&&hasBand(o)&&document.getElementById('cg_'+o.key).checked).forEach(o=>setGroup(o.key,false));
+  g.layers.forEach(id=>setLayer(id,on));document.getElementById('cg_'+key).checked=on;if(key==='reference')legend();}
 const swatch = d => `<span class="sw ${d.pt?'pt':''}" style="background:${d.sw||d.color}"></span>`;
 document.getElementById('layers').innerHTML = GROUPS.map(g=>{
   const f=g.fam?FAM[g.fam]:null, w=f?f.w:g.w, m=f?f.short:g.m;
   return `<label class="grp ${g.ref?'refg':''}"><input type="checkbox" id="cg_${g.key}"><b>${g.label}</b>${w!=null?`<span class="w ${w?'':'zero'}">${w?w+'%':'Not scored'}</span>`:''}<span class="desc">${m}</span></label>`+
-   `<div class="items">${g.layers.map(id=>`<div class="item">${swatch(LAYERS[id])}${LAYERS[id].name}</div>`).join('')}</div>`;
+   `<div class="items">${g.layers.map(id=>`<div class="item">${swatch(LAYERS[id])}<span>${LAYERS[id].name}${LAYERS[id].scored?' <span class="lsc">(used in score)</span>':''}</span></div>${LAYERS[id].range?`<div class="bkw" id="bk_${id}">${bandKey(LAYERS[id])}</div>`:''}`).join('')}</div>`;
 }).join('');
 GROUPS.forEach(g=>{const cb=document.getElementById('cg_'+g.key);cb.addEventListener('change',()=>{userSet[g.key]=true;setGroup(g.key,cb.checked);});});
 
@@ -492,7 +514,7 @@ document.getElementById('aboutBody').innerHTML = `<div class="about-head"><img a
 <div class="pt"><span class="n">2</span><div><p class="ah">Weights</p><p><b>TDI weights</b> are the framework's starting weights. The framework also asks for a comparison against <b>equal weights</b>, to show how much the result depends on the weights.</p>
 <p>Switch between them in the left panel.</p></div></div>
 <div class="pt"><span class="n">3</span><div><p class="ah">Using the map</p><p><span class="vtab on">Deployment tiers</span> shows the result. <span class="vtab off">Service-level gap</span> compares the Tier 1 target service level with the cameras and detectors visible in public data.</p>
-<p>Click any segment for its full breakdown. <b>Layers</b> groups the map data by risk family: some layers show what is scored (crash density, traffic volume, detector stations), and the rest add context. <b>Sources</b> lists every dataset and how it is used.</p></div></div>
+<p>Click any segment for its full breakdown. <b>Layers</b> groups the map data by risk family: layers marked <i>used in score</i> show what each family is scored on, and the rest add context. <b>Sources</b> lists every dataset and how it is used.</p></div></div>
 <div class="go"><span>Prepared by Cavnue using public data. Data accessed ${DATA.accessed}.</span><button data-close>View the map</button></div>`;
 
 // ---------- methodology ----------
