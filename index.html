@@ -43,7 +43,7 @@ h1{font-size:20px;line-height:1.2;margin:0 0 4px;letter-spacing:-.01em}
 .hl .k{flex:1;font-size:14px;font-weight:400;color:var(--ink);line-height:1.38}
 .hl .k b{font-weight:700}
 .hl ul{margin:7px 0 0 0;padding:0;list-style:none}
-.hl li{font-size:11.5px;color:var(--muted);line-height:1.42;margin-bottom:1px;padding-left:10px;position:relative}
+.hl li{font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:0;padding-left:10px;position:relative}
 .hl li b{color:var(--ink);font-weight:600}
 .hl li i{font-style:italic}
 .hl .v.t2{color:var(--blue)}
@@ -82,7 +82,7 @@ h1{font-size:20px;line-height:1.2;margin:0 0 4px;letter-spacing:-.01em}
 .grp{flex-wrap:wrap;row-gap:0}
 .grp .desc{flex-basis:100%;font-size:11px;font-style:italic;font-weight:400;color:#8a9196;padding:0 0 1px 22px;line-height:1.2;margin-top:-1px}
 @media (max-height:800px){.grp{flex-wrap:nowrap}.grp .desc{flex:1;flex-basis:auto;min-width:0;padding:0 0 0 2px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-.grp .w{font-size:10.5px;font-weight:600;color:#fff;background:var(--slate);border-radius:8px;padding:0 6px;white-space:nowrap;flex:none}
+.grp .w{font-size:10.5px;font-weight:600;color:#fff;background:var(--accent);border-radius:8px;padding:0 6px;white-space:nowrap;flex:none}
 .grp .w.zero{background:#c9cdd2;color:var(--slate)}
 .grp .w.eq{background:var(--teal)}
 .grp .w.flash{animation:wflash .8s ease}
@@ -477,19 +477,19 @@ function stats(){
   document.getElementById('sumLbl').textContent = `Corridor summary · ${wName()}`;
   document.getElementById('bar').innerHTML = `<div style="width:${t1hmi/tot*100}%;background:${C.t1h}"></div><div style="width:${(t1mi-t1hmi)/tot*100}%;background:${C.t1m}"></div><div style="width:${t2mi/tot*100}%;background:${C.t2}"></div>`;
   document.getElementById('barkey').innerHTML = `<span><i style="background:${C.t1h}"></i>Tier 1 · top 20%</span><span><i style="background:${C.t2}"></i>Tier 2 · below the top 20%</span>`+
-    `<div class="barnote">Region: ${Math.round(R).toLocaleString()} state highway miles in Caltrans Districts 3, 4 and 10 · ${(rT1/R*100).toFixed(0)}% are Tier 1</div>`;
+    `<div class="barnote">Region: state highways in Caltrans Districts 3, 4 and 10</div>`;
   let h='';
   if(view==='tiers'){
     const legShare = ['I-80','I-580','I-5'].map(r=>{const g=feats.filter(p=>p.route_label===r);return `${r} <b>${(sum(g.filter(p=>tierOf(p)===1),p=>p.length_mi)/sum(g,p=>p.length_mi)*100).toFixed(0)}%</b>`;}).join(' · ');
     const b1=[`<b>${(t1mi/R*100).toFixed(1)}%</b> of the region's ${Math.round(R).toLocaleString()} highway miles`,
               `<b>${(t1mi/rT1*100).toFixed(0)}%</b> of the region's ${Math.round(rT1)} Tier 1 miles`,
               `<b>${(t1mi/tot*100).toFixed(0)}%</b> of the ${tot.toFixed(0)} corridor miles`,
-              `Carrying <b>${(vt1/S.reg_vmt*100).toFixed(0)}%</b> of the region's traffic and <b>${(dt1/S.reg_delay*100).toFixed(0)}%</b> of its delay`,
+              `<b>${(vt1/S.reg_vmt*100).toFixed(0)}%</b> of regional traffic · <b>${(dt1/S.reg_delay*100).toFixed(0)}%</b> of regional delay`,
               legShare];
     if(weights==='equal') b1.push(`<b>${changed} of ${feats.length}</b> segments change tier vs. TDI weights`);
     h+=hl(`${t1mi.toFixed(0)} mi`,'are <b>Tier 1 critical corridors</b>',b1,'t1');
     const t2mod=sum(t2.filter(p=>!spotOf(p)&&bandOf(p)!=='Lower'),p=>p.length_mi), t2low=sum(t2.filter(p=>!spotOf(p)&&bandOf(p)==='Lower'),p=>p.length_mi);
-    const b2=[`<b>${(t2mi/R*100).toFixed(1)}%</b> of the region's highway miles · <b>${(t2mi/tot*100).toFixed(0)}%</b> of corridor miles`,
+    const b2=[`<b>${(t2mi/R*100).toFixed(1)}%</b> of the region's ${Math.round(R).toLocaleString()} highway miles`,`<b>${(t2mi/tot*100).toFixed(0)}%</b> of the ${tot.toFixed(0)} corridor miles`,
               `<b>${t2mod.toFixed(0)} mi</b> score in the 50th–80th percentile`,
               `<b>${t2low.toFixed(0)} mi</b> score below the regional median`];
     if(spot>0) b2.push(`<b>${spot.toFixed(0)} mi</b> are spot treatments <i>(top-20% runs under 2 mi)</i>`);
