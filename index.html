@@ -483,7 +483,7 @@ function legend(){
       `<div class="lnote">Devices are shown under <b>Readiness</b> in the layers below. Readiness is not scored: it informs deployment sequencing and cost (TDI Framework §3.2).</div>`;
   } else {
     el.innerHTML=`<div class="key">${[[C.g1,'Caltrans cameras ½ mile apart or closer'],[C.g2,'Cameras ½ to 1 mile apart'],[C.g0,'Cameras more than 1 mile apart']].map(item).join('')}</div>`+
-      `<div class="lnote">Spacing from one Caltrans camera to the next along each Interstate, both directions together. Point cameras do not provide the continuous lane-level state Tier 1 targets.</div>`;
+      `<div class="lnote">Spacing from one Caltrans camera to the next along each Interstate, both directions together. Point cameras do not necessarily provide the continuous lane-level state Tier 1 targets.</div>`;
   }
 }
 function hl(v,k,items,cls){return `<div class="hl"><div class="top"><div class="v ${cls||''}">${v}</div><div class="k">${k}</div></div>${items&&items.length?`<ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul>`:''}</div>`;}
